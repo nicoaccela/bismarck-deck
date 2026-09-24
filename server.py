@@ -88,6 +88,40 @@ button:hover{background:#0B77CF}.err{color:#FFB38A;font-size:16px;margin:14px 0 
 <input name="code" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" maxlength="12" autofocus aria-label="Access code">
 <input type="hidden" name="next" value="__NEXT__">
 <button type="submit">Continue</button><div class="err">__ERR__</div></form></body></html>"""
+START_HTML = """<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
+<title>City of Bismarck demonstration</title>
+<style>
+@font-face{font-family:PJS;src:url(/fonts/pjs-400.woff2) format("woff2");font-weight:400}
+@font-face{font-family:PJS;src:url(/fonts/pjs-600.woff2) format("woff2");font-weight:600}
+@font-face{font-family:PJS;src:url(/fonts/pjs-700.woff2) format("woff2");font-weight:700}
+*{box-sizing:border-box}html,body{overflow-x:hidden}
+body{margin:0;min-height:100vh;display:grid;grid-template-columns:minmax(0,980px);justify-content:center;align-content:center;
+font-family:PJS,system-ui,sans-serif;background:radial-gradient(900px 560px at 84% -14%,rgba(0,175,241,.22),transparent 62%),#0D263A;color:#fff;padding:28px 20px}
+.logos{display:flex;align-items:center;gap:14px;margin-bottom:40px;flex-wrap:wrap}.logos img{height:20px;width:auto;max-width:34%;object-fit:contain;display:block}
+.logos img.city{height:28px}.logos i{width:1px;height:20px;background:rgba(255,255,255,.25)}
+h1{font-size:clamp(30px,5vw,46px);font-weight:600;letter-spacing:-.02em;margin:0 0 10px}
+.lede{font-size:18px;color:#B9CBD6;margin:0 0 34px;max-width:46ch;line-height:1.45}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+a.c{display:flex;flex-direction:column;gap:12px;text-decoration:none;color:#0D263A;background:#fff;border-radius:20px;padding:28px 26px;min-height:230px;
+transition:transform .2s ease,box-shadow .2s ease}
+a.c:hover{transform:translateY(-3px);box-shadow:0 18px 44px rgba(0,0,0,.28)}
+.ic{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;background:rgba(0,104,190,.1);color:#0068BE}
+.c.b .ic{background:rgba(0,150,140,.12);color:#00968C}.ic svg{width:28px;height:28px}
+.c h2{margin:6px 0 0;font-size:25px;letter-spacing:-.01em}.c p{margin:0;font-size:16.5px;color:#46606F;line-height:1.45;flex:1}
+.c span{font-weight:700;color:#0068BE;font-size:16px}.c.b span{color:#00968C}
+</style></head><body>
+<div class="logos"><img src="/img/accela-logo.png" alt="Accela" style="filter:brightness(0) invert(1)"><i></i>
+<img src="/img/novotx-logo-white.png" alt="Novotx"><i></i><img class="city" src="/img/bismarck-logo-white.png" alt="City of Bismarck"></div>
+<h1>Asset and work management</h1>
+<p class="lede">A demonstration for the City of Bismarck. Pick how you want to follow along. You can switch any time.</p>
+<div class="g">
+<a class="c" href="/watch"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></div>
+<h2>Watch live</h2><p>The slides move with the presenter, and each question ticks off as we show it. Nothing to click.</p><span>Open the live slides &rarr;</span></a>
+<a class="c b" href="/follow"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg></div>
+<h2>My checklist</h2><p>Check off what you have seen, add your own notes, open the customer stories, and take a copy with you.</p><span>Open my checklist &rarr;</span></a>
+</div></body></html>"""
+
 
 # ---------------------------------------------------------------- JS literal -> JSON
 class ParseError(Exception): pass
@@ -271,13 +305,13 @@ def public_url(host=None):
 _QR = {}
 def qr(kind, host=None):
     import segno
-    u = public_url(host) + "/follow?code=" + CODE
+    u = public_url(host) + "/?code=" + CODE
     if (kind, u) not in _QR:
         q = segno.make(u, error="m"); b = io.BytesIO()
         if kind == "svg": q.save(b, kind="svg", scale=8, border=2, dark="#0D263A", xmldecl=False)
         else: q.save(b, kind="png", scale=16, border=3, dark="#0D263A")
         _QR[(kind, u)] = b.getvalue()
-        if kind == "png" and u == public_url() + "/follow?code=" + CODE:                     # keep the printable PNG in step with url.txt
+        if kind == "png" and u == public_url() + "/?code=" + CODE:                     # keep the printable PNG in step with url.txt
             try:
                 with open(os.path.join(HERE, "follow-qr.png"), "wb") as f: f.write(_QR[(kind, u)])
             except OSError: pass
@@ -347,16 +381,18 @@ class H(http.server.BaseHTTPRequestHandler):
             html = open(DECK, encoding="utf-8").read()
             pk = (qs.get("presenter") or [""])[0]
             if key_ok(pk) or (not pk and key_ok(self._cookie_key())):
-                js = read("presenter.js").replace("__FOLLOW_URL__", json.dumps(public_url(self.headers.get("Host")) + "/follow?code=" + CODE))
+                js = read("presenter.js").replace("__FOLLOW_URL__", json.dumps(public_url(self.headers.get("Host")) + "/?code=" + CODE))
                 html = html.replace("</body>", "<script>\n" + js + "\n</script>\n</body>", 1) if "</body>" in html else html + "<script>" + js + "</script>"
                 return self._send(200, html, "text/html; charset=utf-8", {
                     "Set-Cookie": f"{COOKIE}={KEY}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=86400",
                     "Referrer-Policy": "no-referrer"})
+            return self._send(200, START_HTML, "text/html; charset=utf-8", {"Referrer-Policy": "no-referrer"})
+        if path in ("/watch", "/watch/"):
+            # watch live: the slides follow the presenter and tick off as shown (see watch.js)
+            html = open(DECK, encoding="utf-8").read()
             if ANCHOR in html: html = html.replace(ANCHOR, STRIP + ANCHOR, 1)
-            # audience copy: clicking a question checks it off as "seen" for that viewer only (see audience.js);
-            # only the presenter link syncs ticks to phones
-            aj = read("audience.js")
-            html = html.replace("</body>", "<script>\n" + aj + "\n</script>\n</body>", 1) if "</body>" in html else html + "<script>" + aj + "</script>"
+            wj = read("watch.js")
+            html = html.replace("</body>", "<script>\n" + wj + "\n</script>\n</body>", 1) if "</body>" in html else html + "<script>" + wj + "</script>"
             return self._send(200, html, "text/html; charset=utf-8")
         if path in ("/follow", "/follow/"):
             page = read("follow.html").replace("/*__CONTENT__*/null", json.dumps(content()).replace("</", "<\\/"))

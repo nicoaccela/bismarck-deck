@@ -48,3 +48,9 @@ Every page needs an access code. Anyone without it sees a branded login screen.
 - Stored in `leads.jsonl` in `DATA_DIR` (a 1GB persistent disk on Render at /var/data, so redeploys keep it).
 - Download as a spreadsheet (presenter only): open the presenter link once, then `<url>/leads.csv` in that same browser.
 - Personal notes are never sent. Only people who tick the box agreed to a follow-up.
+
+## Views
+- `/` start screen: pick **Watch live** or **My checklist** (the QR opens this).
+- `/watch` Watch live: the deck follows the presenter's slide and ticks. Read-only. Browsing away pauses; one click jumps back.
+- `/follow` My checklist: personal check-offs, notes, customer stories, email/PDF copy, sign-up. Shows the presenter's ticks as "Shown" badges.
+- `/?presenter=<key>` presenter deck (drives both views).
