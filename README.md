@@ -19,7 +19,7 @@ One stdlib Python server (`server.py`, 127.0.0.1:8080) behind a Cloudflare quick
 - The hook wraps the deck's `refreshDemo()` (called after every tick) and also checks the `bis-demo-done-v1` localStorage every second. Changes are POSTed to `/api/state` together with the current chapter slide (`SCENES[cur].ch`).
 - Phones listen on `/api/stream` (SSE) and poll `/api/state` every 1.5s whenever SSE is not delivering (Cloudflare can buffer SSE).
 - State lives in memory and `state.json`, so it survives a restart. Only the presenter can write: `X-Presenter-Key` header or the presenter cookie. Anything else gets 403.
-- Reset: `curl -X POST -H "X-Presenter-Key: $(cat presenter.key)" <url>/api/reset`. Reset bumps an `epoch`; an open presenter tab sees it and clears its own ticks instead of pushing them back. Opening the presenter URL in a fresh browser merges with the server ticks, it never wipes the phones.
+- Reset: `curl -X POST -d '{}' -H "X-Presenter-Key: $(cat presenter.key)" <url>/api/reset`. Reset bumps an `epoch`; an open presenter tab sees it and clears its own ticks instead of pushing them back. Opening the presenter URL in a fresh browser merges with the server ticks, it never wipes the phones.
 - Ticks are stored per browser origin. Ticks made in the `file://` deck do not sync; present from the tunnel URL.
 
 ## Content

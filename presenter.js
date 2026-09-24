@@ -27,7 +27,7 @@ function links(){
   return o;
 }
 
-let epoch=null, last="", ready=false, busy=false, info={};
+let epoch=null, last="", ready=false, busy=false, info={}, myRev=-1;
 async function api(method,path,body){
   const r=await fetch(path,{method,cache:"no-store",credentials:"same-origin",headers:body?{"Content-Type":"application/json"}:{},body:body?JSON.stringify(body):undefined});
   return {status:r.status, json:await r.json().catch(()=>({}))};
@@ -49,7 +49,7 @@ async function sync(){
   busy=true;
   try{
     const r=await api("POST","/api/state",body);
-    if(r.status===200){ last=sig; info={...info,...r.json}; paint(); }
+    if(r.status===200){ last=sig; myRev=r.json.rev; info={...info,...r.json}; paint(); }
     else if(r.status===409){ ready=false; boot(); }
     else if(r.status===403){ status("Not authorised. Reopen with ?presenter=<key>."); }
   }catch(e){ status("Offline. Retrying."); }
@@ -58,12 +58,14 @@ async function sync(){
 async function watch(){        // notices a reset done elsewhere (curl, another tab), and the viewer count
   try{ const {json:s}=await api("GET","/api/state");
     if(ready && s.epoch!==epoch){ setLocal([]); epoch=s.epoch; localStorage.setItem(EPK,String(epoch)); last=""; }
+    else if(ready && !busy && s.rev>myRev && JSON.stringify((s.done||[]).slice().sort())!==JSON.stringify(readDone())){
+      myRev=s.rev; setLocal((s.done||[]).slice().sort()); }        // ticked from the presenter's phone
     info=s; paint(); }catch(e){}
 }
 // wrap the deck's tick redraw so a tick syncs immediately; the 1s loop is the fallback
 try{ const _r=refreshDemo; refreshDemo=function(){ const x=_r.apply(this,arguments); setTimeout(sync,0); return x; }; }catch(e){}
 addEventListener("storage",e=>{ if(e.key===LSD) setTimeout(sync,0); });
-setInterval(sync,1000); setInterval(watch,3000); boot();
+setInterval(sync,1000); setInterval(watch,1500); boot();
 
 /* ---- QR card -------------------------------------------------------------- */
 const st=document.createElement("style");

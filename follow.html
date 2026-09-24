@@ -81,12 +81,17 @@ main{padding:16px 14px 40px;max-width:640px;margin:0 auto}
 .r{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:start;padding:12px 8px;border-radius:12px;min-height:64px;
   transition:background .5s var(--ease)}
 .r + .r{border-top:1px solid var(--surf-3);border-top-left-radius:0;border-top-right-radius:0}
-.ck{width:44px;height:44px;border-radius:50%;border:2.5px solid #C6D4DD;display:grid;place-items:center;position:relative;
+.ck{padding:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;width:44px;height:44px;border-radius:50%;border:2.5px solid #C6D4DD;display:grid;place-items:center;position:relative;
   transition:border-color .35s,background .35s var(--ease),transform .35s var(--ease)}
 .ck svg{width:24px;height:24px;stroke:#fff;stroke-width:3.2;fill:none;stroke-linecap:round;stroke-linejoin:round;
   stroke-dasharray:30;stroke-dashoffset:30;transition:stroke-dashoffset .45s .1s var(--ease)}
-.r.done .ck{background:var(--teal-ink);border-color:var(--teal-ink)}
-.r.done .ck svg{stroke-dashoffset:0}
+.r.mine .ck,.isp .r.done .ck{background:var(--teal-ink);border-color:var(--teal-ink)}
+.r.mine .ck svg,.isp .r.done .ck svg{stroke-dashoffset:0}
+.r.done:not(.mine) .ck{border-color:var(--teal-ink);box-shadow:0 0 0 4px rgba(0,206,195,.18)}
+.isp .r.done .ck{box-shadow:none}
+.shown{display:none;margin-left:8px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--blue);padding:2px 8px;border-radius:99px;vertical-align:1px}
+.r.done .shown{display:inline-block}
+.mycount{font-size:14px;color:var(--ink-2);margin-top:8px}.mycount b{color:var(--teal-ink)}
 .r.pop .ck{animation:pop .6s var(--ease)}
 .r.pop{background:rgba(0,206,195,.12)}
 @keyframes pop{0%{transform:scale(.7)}55%{transform:scale(1.18)}100%{transform:scale(1)}}
@@ -157,6 +162,7 @@ footer img{height:16px;vertical-align:middle;margin:0 6px;opacity:.8}
 .take .bt.p{background:var(--blue);color:#fff}.take .bt.s{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2)}
 .take .fine{margin-top:14px;font-size:13px;color:#8FA8B8}
 #sheet{display:none}
+.isp .prog::after{content:"Presenter mode: tap a circle to tick it for everyone";display:block;font-size:13px;font-weight:600;color:var(--teal-ink);margin-top:8px}
 .su{position:fixed;inset:0;z-index:50;background:rgba(13,38,58,.55);display:flex;align-items:flex-end;justify-content:center}
 .suc{width:100%;max-width:520px;background:#fff;border-radius:22px 22px 0 0;padding:26px 22px calc(22px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto}
 .suc h2{margin:0 0 6px;font-size:24px}.suc p{margin:0 0 18px;color:var(--ink-2);font-size:16px}
@@ -166,6 +172,7 @@ footer img{height:16px;vertical-align:middle;margin:0 6px;opacity:.8}
 .suc .cb{display:flex;gap:12px;align-items:flex-start;font-weight:500}.suc .cb input{width:22px;height:22px;margin:1px 0 0;flex:none;accent-color:var(--blue)}
 .suc .bt{display:flex;align-items:center;justify-content:center;width:100%;min-height:54px;border-radius:14px;border:0;font:inherit;font-weight:700;font-size:17px;margin-top:10px;cursor:pointer}
 .suc .bt.p{background:var(--blue);color:#fff}.suc .bt.x{background:var(--surf-3);color:var(--ink)}
+.suc a.bt{text-decoration:none}
 .suc .fine{margin-top:12px;font-size:13px;color:var(--ink-3)}.suerr{color:#B4441A;font-size:15px;min-height:1em}
 @media print{
   body{background:#fff}
@@ -196,9 +203,10 @@ footer img{height:16px;vertical-align:middle;margin:0 6px;opacity:.8}
 <div class="prog" role="status" aria-live="polite">
   <div class="row"><div class="big" id="count"><b>0</b> of 20 shown</div><a class="now" id="now" href="#"></a></div>
   <div class="bar"><i id="bar"></i></div>
+  <div class="mycount" id="mycount">Tap a circle to check off what you have seen.</div>
 </div>
 <main>
-  <p class="intro">Tap any customer story to open it. This page updates by itself, so there is no need to refresh.</p>
+  <p class="intro">Check off each question once you have seen it. Tap any customer story to open it. This page updates by itself.</p>
   <div id="list"></div>
   <section class="take" id="take">
     <h2>Take it with you</h2>
@@ -224,7 +232,15 @@ footer img{height:16px;vertical-align:middle;margin:0 6px;opacity:.8}
   <button class="bt p" type="submit">Send me the copy</button>
   <button class="bt x" type="button" id="sux">Cancel</button>
   <div class="fine">Accela keeps your name and email, and only follows up if you tick the box. Your notes are never sent to us.</div>
-</form></div>
+</form>
+<div class="suc" id="sudone" hidden>
+  <h2>Thanks</h2>
+  <p>Your email app should open with your copy. Just press send.</p>
+  <a class="bt p" id="again" href="#">Open the email again</a>
+  <button class="bt x" type="button" id="copy">Copy it instead</button>
+  <button class="bt x" type="button" id="pdf2">Save as PDF</button>
+  <button class="bt x" type="button" id="sudx">Done</button>
+</div></div>
 <div id="sheet"></div>
 <div class="toast" id="toast"><i><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></i><span id="toastt"></span></div>
 
@@ -262,10 +278,34 @@ document.addEventListener("submit",async e=>{
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email)) return $("#suerr").textContent="Please check your email address.";
   $("#suerr").textContent="";
   try{ localStorage.setItem("bis-follow-me",JSON.stringify({name:d.name,email:d.email,org:d.org})); }catch(err){}
-  try{ await fetch("/api/lead",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(d)}); }catch(err){}
-  $("#su").hidden=true; location.href=mailHref(d.email);
+  try{ fetch("/api/lead",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(d),keepalive:true}).catch(()=>{}); }catch(err){}
+  const href=mailHref(d.email);
+  $("#sudone").hidden=false; f.hidden=true; $("#again").href=href;
+  window.location.href=href;          // same tick as the tap, so phones allow it
 });
 (()=>{ try{ const me=JSON.parse(localStorage.getItem("bis-follow-me")||"null"); if(me){ const f=$("#suf"); f.name.value=me.name||""; f.email.value=me.email||""; f.org.value=me.org||""; } }catch(e){} })();
+let tipAt=0, IS_P=false;
+const MK="bis-follow-mine-v1";
+let MINE=(()=>{ try{ return JSON.parse(localStorage.getItem(MK)||"{}")||{}; }catch(e){ return {}; } })();
+function saveMine(){ try{ localStorage.setItem(MK,JSON.stringify(MINE)); }catch(e){} }
+function paintMine(pop){
+  document.querySelectorAll(".r[data-q]").forEach(r=>{ const on=!!MINE[r.dataset.q]; r.classList.toggle("mine",on);
+    if(pop&&r.dataset.q===pop&&on){ r.classList.remove("pop"); void r.offsetWidth; r.classList.add("pop"); setTimeout(()=>r.classList.remove("pop"),900); } });
+  const n=Object.keys(MINE).length, el=$("#mycount");
+  if(el) el.innerHTML=IS_P?"":(n?`You have checked off <b>${n}</b> of 20`:"Tap a circle to check off what you have seen.");
+}
+fetch("/api/state",{cache:"no-store"}).then(r=>r.json()).then(j=>{ if(j.presenter){ IS_P=true; document.body.classList.add("isp"); } }).catch(()=>{});
+document.addEventListener("click",async e=>{
+  const b=e.target.closest("[data-ck]"); if(!b||!C) return;
+  const q=b.dataset.ck;
+  if(!IS_P){ MINE[q]?delete MINE[q]:(MINE[q]=1); saveMine(); paintMine(q); return; }
+  const set=new Set(S.done); set.has(q)?set.delete(q):set.add(q);
+  S.done=[...set].sort(); apply(false);                                  // instant on this phone
+  try{ const r=await fetch("/api/state",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({done:S.done,epoch:S.epoch})});
+    if(r.ok){ const j=await r.json(); onState(j); } else if(r.status===409){ poll(); } }catch(err){}
+});
+function fallbackCopy(t){ const a=document.createElement("textarea"); a.value=t; a.setAttribute("readonly",""); a.style.position="fixed"; a.style.opacity="0";
+  document.body.appendChild(a); a.select(); try{ document.execCommand("copy"); }catch(e){} a.remove(); }
 const today=()=>new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
 function summaryText(max){
   const done=new Set(S.done), L=[];
@@ -273,7 +313,7 @@ function summaryText(max){
   C.chapters.forEach(c=>{
     L.push(noDash(c.n+" "+c.title).toUpperCase());
     c.reqs.forEach(r=>{
-      L.push((done.has(r.id)?"[shown] ":"[ ] ")+r.id+" "+noDash(r.text));
+      L.push((MINE[r.id]?"[x] ":"[ ] ")+r.id+" "+noDash(r.text)+(done.has(r.id)?" (shown)":""));
       if(NOTES[r.id]) L.push("   My note: "+NOTES[r.id].trim().replace(/\n+/g," "));
     });
     if(c.use&&c.use.who&&!c.use.honest) L.push("   Customer story: "+noDash(c.use.who)+(c.url?" ("+c.url+")":""));
@@ -292,15 +332,19 @@ function mailHref(to){
 }
 function buildSheet(){
   const done=new Set(S.done);
-  $("#sheet").innerHTML=`<h1>City of Bismarck demonstration</h1><p class="sub">Asset and work management, Accela and Novotx Elements XS. ${esc(today())}. ${S.done.length} of 20 questions shown.</p>`+
-    C.chapters.map(c=>`<h2>${T(c.n)} ${T(c.title)}</h2>`+c.reqs.map(r=>`<div class="q"><b>${esc(r.id)}</b>${T(r.text)} <span class="st${done.has(r.id)?"":" no"}">${done.has(r.id)?"Shown":"Not shown"}</span>
+  $("#sheet").innerHTML=`<h1>City of Bismarck demonstration</h1><p class="sub">Asset and work management, Accela and Novotx Elements XS. ${esc(today())}. You checked off ${Object.keys(MINE).length} of 20.</p>`+
+    C.chapters.map(c=>`<h2>${T(c.n)} ${T(c.title)}</h2>`+c.reqs.map(r=>`<div class="q"><b>${esc(r.id)}</b>${T(r.text)} <span class="st${MINE[r.id]?"":" no"}">${MINE[r.id]?"&#10003; Seen":"Not checked"}</span>
       ${r.outcome?`<div class="o">${T(r.outcome)}</div>`:""}${NOTES[r.id]?`<div class="n">${esc(NOTES[r.id])}</div>`:""}</div>`).join("")+
       (c.use&&c.use.who&&!c.use.honest?`<p class="u">Customer story: ${T(c.use.who)}${c.url?`, <a href="${esc(c.url)}">${esc(c.url)}</a>`:""}</p>`:"")).join("");
 }
 document.addEventListener("click",e=>{
-  if(e.target.closest("#pdf")){ if(!C) return; buildSheet(); setTimeout(()=>window.print(),50); }
-  const m=e.target.closest("#mail"); if(m&&C){ e.preventDefault(); $("#su").hidden=false; setTimeout(()=>$("#suf [name=name]").focus(),50); }
-  if(e.target.closest("#sux")||e.target.id==="su"){ $("#su").hidden=true; }
+  if(e.target.closest("#pdf")||e.target.closest("#pdf2")){ if(!C) return; buildSheet(); window.print(); }
+  if(e.target.closest("#copy")&&C){ const t=summaryText(0), b=e.target.closest("#copy");
+    const ok=()=>{ b.textContent="Copied. Paste it into any email."; };
+    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(ok,()=>{ fallbackCopy(t); ok(); }); else { fallbackCopy(t); ok(); } }
+  if(e.target.closest("#sudx")){ $("#su").hidden=true; $("#sudone").hidden=true; $("#suf").hidden=false; }
+  const m=e.target.closest("#mail"); if(m&&C){ e.preventDefault(); $("#su").hidden=false; $("#sudone").hidden=true; $("#suf").hidden=false; setTimeout(()=>$("#suf [name=name]").focus(),50); }
+  if(e.target.closest("#sux")||e.target.id==="su"){ $("#su").hidden=true; $("#sudone").hidden=true; $("#suf").hidden=false; }
 });
 let S={done:[],ch:null,links:{},rev:-1,ver:null,qa:""}, first=true, lastNow=null, userScrolledAt=0;
 
@@ -333,14 +377,14 @@ function render(){
         <div class="chq"><span>${T(c.q)}</span><span class="pill" data-pill hidden></span></div></div></div>
       ${c.line?`<p class="chl">${T(c.line)}</p>`:""}
       <ul class="rq">${c.reqs.map(r=>`<li class="r" data-q="${esc(r.id)}">
-        <div class="ck" aria-hidden="true">${CHECK}</div>
-        <div><div class="qid">${esc(r.id)}<span class="sr" data-sr style="position:absolute;left:-9999px"></span></div><div class="qt">${T(r.text)}</div>
+        <button class="ck" type="button" data-ck="${esc(r.id)}" aria-label="${esc(r.id)} status">${CHECK}</button>
+        <div><div class="qid">${esc(r.id)}<span class="shown">Shown</span><span class="sr" data-sr style="position:absolute;left:-9999px"></span></div><div class="qt">${T(r.text)}</div>
           ${r.hi?`<span class="star">&#9733; You highlighted this</span>`:""}
           ${r.outcome?`<div class="qo">${T(r.outcome)}</div>`:""}<div data-dl></div>
           <button class="nb${NOTES[r.id]?" has":""}" type="button" data-nb="${esc(r.id)}">${NOTES[r.id]?"Your note":"Add a note"}</button>
           <textarea class="nt" data-nt="${esc(r.id)}" placeholder="Your note on ${esc(r.id)}" ${NOTES[r.id]?"":"hidden"}>${esc(NOTES[r.id]||"")}</textarea></div></li>`).join("")}</ul>
       ${uc}</section>`; }).join("");
-  apply(true);
+  apply(true); paintMine();
 }
 
 function currentChapter(done){
@@ -406,6 +450,7 @@ async function refetchContent(){
   try{ const r=await fetch("/api/content",{cache:"no-store"}); if(r.ok){ C=await r.json(); render(); } }catch(e){}
 }
 function onState(s){
+  if(s.presenter && !IS_P){ IS_P=true; document.body.classList.add("isp"); }
   lastOk=Date.now(); setLive(true,"Live");
   if(s.rev===S.rev && s.ver===S.ver) return;
   const verChanged=S.ver && s.ver && s.ver!==S.ver;

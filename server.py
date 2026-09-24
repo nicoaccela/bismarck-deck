@@ -327,7 +327,10 @@ class H(http.server.BaseHTTPRequestHandler):
         if path == "/login": return self._login((qs.get("next") or ["/"])[0])
         if path == "/robots.txt": return self._send(200, "User-agent: *\nDisallow: /\n")
         open_asset = path.startswith("/fonts/") or (path.startswith("/img/") and os.path.basename(path) in OPEN_IMG)
-        presenter_link = path in ("/", "/index.html") and key_ok((qs.get("presenter") or [""])[0])
+        presenter_link = path in ("/", "/index.html", "/follow", "/follow/") and key_ok((qs.get("presenter") or [""])[0])
+        if presenter_link and path.startswith("/follow"):          # presenter phone link: set the cookie, drop the key from the URL
+            return self._send(302, "", "text/plain", {"Location": "/follow",
+                "Set-Cookie": f"{COOKIE}={KEY}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=86400", "Referrer-Policy": "no-referrer"})
         if not open_asset and not presenter_link:
             c = (qs.get("code") or [""])[0]
             if c and code_ok(c):
@@ -347,6 +350,8 @@ class H(http.server.BaseHTTPRequestHandler):
                     "Set-Cookie": f"{COOKIE}={KEY}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=86400",
                     "Referrer-Policy": "no-referrer"})
             if ANCHOR in html: html = html.replace(ANCHOR, STRIP + ANCHOR, 1)
+            # audience copy: no tick controls (only the presenter link syncs ticks to phones)
+            html = html.replace("</head>", "<style>.r[data-req] .go,.chfoot .nextch{display:none!important}.r[data-req]{pointer-events:none}</style></head>", 1)
             return self._send(200, html, "text/html; charset=utf-8")
         if path in ("/follow", "/follow/"):
             page = read("follow.html").replace("/*__CONTENT__*/null", json.dumps(content()).replace("</", "<\\/"))
@@ -368,7 +373,7 @@ class H(http.server.BaseHTTPRequestHandler):
             if v: VIEWERS[v] = time.time()
             with LOCK: s = public_state()
             if self._is_presenter():
-                now = time.time(); s["viewers"] = sum(1 for t in list(VIEWERS.values()) if now - t < 12)
+                now = time.time(); s["viewers"] = sum(1 for t in list(VIEWERS.values()) if now - t < 12); s["presenter"] = True
                 s["parse_error"] = _CACHE["error"]
             return self._send(200, s)
         if path == "/api/stream": return self.stream(qs)
