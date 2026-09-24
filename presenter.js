@@ -44,7 +44,7 @@ async function boot(){
 }
 async function sync(){
   if(!ready||busy) return;
-  const body={done:readDone(), ch:curCh(), publish:localStorage.getItem(PUB)==="1", links:links(), epoch};
+  const body={done:readDone(), ch:curCh(), slide:(typeof cur==="number"?cur:null), publish:localStorage.getItem(PUB)==="1", links:links(), epoch};
   const sig=JSON.stringify(body); if(sig===last) return;
   busy=true;
   try{
@@ -65,6 +65,8 @@ async function watch(){        // notices a reset done elsewhere (curl, another 
 // wrap the deck's tick redraw so a tick syncs immediately; the 1s loop is the fallback
 try{ const _r=refreshDemo; refreshDemo=function(){ const x=_r.apply(this,arguments); setTimeout(sync,0); return x; }; }catch(e){}
 addEventListener("storage",e=>{ if(e.key===LSD) setTimeout(sync,0); });
+// every slide change goes out straight away, so computers following along move with the presenter
+try{ const _g=go; go=function(){ const x=_g.apply(this,arguments); setTimeout(sync,0); return x; }; }catch(e){}
 setInterval(sync,1000); setInterval(watch,1500); boot();
 
 /* ---- QR card -------------------------------------------------------------- */

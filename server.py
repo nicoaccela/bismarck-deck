@@ -232,7 +232,7 @@ def save():
     LOCK.notify_all()
 def public_state():
     order = sorted(STATE["done"], key=lambda q: STATE["done"][q])
-    return {"done": order, "ch": STATE["ch"], "epoch": STATE["epoch"], "rev": STATE["rev"],
+    return {"done": order, "ch": STATE["ch"], "slide": STATE.get("slide"), "epoch": STATE["epoch"], "rev": STATE["rev"],
             "links": STATE["links"] if STATE["publish"] else {}, "publish": STATE["publish"],
             "ver": content_ver(), "qa": qa_url()}
 
@@ -461,6 +461,7 @@ class H(http.server.BaseHTTPRequestHandler):
                 want = {q for q in body["done"] if isinstance(q, str) and re.fullmatch(r"Q\d{1,2}", q)}
                 now = time.time()
                 STATE["done"] = {q: STATE["done"].get(q, now) for q in sorted(want)}
+            if "slide" in body: STATE["slide"] = body["slide"] if isinstance(body["slide"], int) and 0 <= body["slide"] < 300 else None
             if "ch" in body: STATE["ch"] = body["ch"] if isinstance(body["ch"], int) and 0 <= body["ch"] < 50 else None
             if "publish" in body: STATE["publish"] = bool(body["publish"])
             if "links" in body and isinstance(body["links"], dict):
