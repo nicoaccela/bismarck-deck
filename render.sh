@@ -21,6 +21,15 @@ r() { curl -sS -f -H "Authorization: Bearer $TOKEN" -H "Accept: application/json
 
 SID=$(r "$API/services?name=$NAME&limit=20" | jq -r '.[0].service.id // empty')
 
+status() {
+  [ -n "$SID" ] || { echo "No service yet. Run: ./render.sh deploy"; exit 1; }
+  URL=$(r "$API/services/$SID" | jq -r '.serviceDetails.url')
+  PK=$(r "$API/services/$SID/env-vars?limit=50" | jq -r '.[] | .envVar | select(.key=="PRESENTER_KEY") | .value')
+  echo "Deploy:    $(r "$API/services/$SID/deploys?limit=1" | jq -r '.[0].deploy.status')"
+  echo "Audience:  $URL/follow"
+  echo "Presenter: $URL/?presenter=$PK"
+}
+
 case "${1:-status}" in
   deploy)
     if [ -z "$SID" ]; then
@@ -38,13 +47,8 @@ case "${1:-status}" in
     for i in $(seq 1 60); do
       st=$(r "$API/services/$SID/deploys?limit=1" | jq -r '.[0].deploy.status')
       echo "  $st"; case "$st" in live) break;; *failed*|canceled|deactivated) exit 1;; esac; sleep 10
-    done ;&
-  status)
-    [ -n "$SID" ] || { echo "No service yet. Run: ./render.sh deploy"; exit 1; }
-    URL=$(r "$API/services/$SID" | jq -r '.serviceDetails.url')
-    PK=$(r "$API/services/$SID/env-vars?limit=50" | jq -r '.[] | .envVar | select(.key=="PRESENTER_KEY") | .value')
-    echo "Deploy:    $(r "$API/services/$SID/deploys?limit=1" | jq -r '.[0].deploy.status')"
-    echo "Audience:  $URL/follow"
-    echo "Presenter: $URL/?presenter=$PK" ;;
+    done
+    status ;;
+  status) status ;;
   *) sed -n 2,5p "$0"; exit 1 ;;
 esac
