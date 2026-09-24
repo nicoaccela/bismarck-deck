@@ -1,0 +1,30 @@
+# Bismarck deck site + phone follow-along
+
+One stdlib Python server (`server.py`, 127.0.0.1:8080) behind a Cloudflare quick tunnel (URL in `url.txt`).
+
+| URL | Who | What |
+|---|---|---|
+| `/` | public | Live deck, backstage slide removed. No presenter script. |
+| `/follow` | public (phones) | Chapters, Q1 to Q20 ticking live, customer use cases, Novotx links |
+| `/?presenter=<key>` | presenter | Full deck plus the sync hook and the QR card. Key is in `presenter.key` (chmod 600). |
+| `/follow-qr.svg`, `follow-qr.png` | anyone | QR for `<url.txt>/follow`. The PNG file is rewritten when the server starts or the URL changes. |
+
+## Day of
+1. `./serve.sh server` restarts just the server. `./serve.sh` (no argument) also starts a NEW tunnel, which changes the URL and the QR.
+2. Present from `<url>/?presenter=$(cat presenter.key)`. The key is removed from the address bar straight away and an HttpOnly cookie keeps presenter mode on reload.
+3. Press **L** (or the teal **Phones** button in the bottom bar) for the audience QR card. The `...` on the card opens presenter controls: **Show demo links on phones** (off by default) and **Reset all ticks**.
+4. Tick requirements with the deck's own "Mark shown" rows. Phones update in about 0.1s locally, 1.5s at worst.
+
+## How sync works
+- The hook wraps the deck's `refreshDemo()` (called after every tick) and also checks the `bis-demo-done-v1` localStorage every second. Changes are POSTed to `/api/state` together with the current chapter slide (`SCENES[cur].ch`).
+- Phones listen on `/api/stream` (SSE) and poll `/api/state` every 1.5s whenever SSE is not delivering (Cloudflare can buffer SSE).
+- State lives in memory and `state.json`, so it survives a restart. Only the presenter can write: `X-Presenter-Key` header or the presenter cookie. Anything else gets 403.
+- Reset: `curl -X POST -H "X-Presenter-Key: $(cat presenter.key)" <url>/api/reset`. Reset bumps an `epoch`; an open presenter tab sees it and clears its own ticks instead of pushing them back. Opening the presenter URL in a fresh browser merges with the server ticks, it never wipes the phones.
+- Ticks are stored per browser origin. Ticks made in the `file://` deck do not sync; present from the tunnel URL.
+
+## Content
+`/follow` and `/api/content` parse `CITY.chapters`, the `CITY.chapters[i].url/impact` lines, `CITY.outcomes` and `CITY.proof6` from the live deck file on every change (mtime). If a parse fails mid-edit, the last good copy (`content.last-good.json`) is served. Chapter links are only shown after the server has fetched them and got HTTP 200 (rechecked every 30 minutes). If the deck changes during the session, phones reload the content by themselves.
+
+## Q&A portal
+- The Q&A overlay's corner card (**Q**) and its full-screen QR are repointed to `/follow` in presenter mode, so there is one audience QR.
+- `/follow` shows an **Ask us a question** button only when the Q&A portal is publicly reachable: its `/api/info` URL is https and not localhost, or you put the public URL in `qa-url.txt`.

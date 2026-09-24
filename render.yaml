@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: bismarck-deck
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: python3 server.py
+    healthCheckPath: /robots.txt
+    envVars:
+      - key: PRESENTER_KEY
+        generateValue: true
+      - key: QA_URL
+        sync: false

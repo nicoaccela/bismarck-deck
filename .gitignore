@@ -1,0 +1,10 @@
+presenter.key
+state.json
+server.log
+tunnel.log
+url.txt
+qa-url.txt
+follow-qr.png
+content.last-good.json
+__pycache__/
+.DS_Store
