@@ -350,8 +350,10 @@ class H(http.server.BaseHTTPRequestHandler):
                     "Set-Cookie": f"{COOKIE}={KEY}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=86400",
                     "Referrer-Policy": "no-referrer"})
             if ANCHOR in html: html = html.replace(ANCHOR, STRIP + ANCHOR, 1)
-            # audience copy: no tick controls (only the presenter link syncs ticks to phones)
-            html = html.replace("</head>", "<style>.r[data-req] .go,.chfoot .nextch{display:none!important}.r[data-req]{pointer-events:none}</style></head>", 1)
+            # audience copy: clicking a question checks it off as "seen" for that viewer only (see audience.js);
+            # only the presenter link syncs ticks to phones
+            aj = read("audience.js")
+            html = html.replace("</body>", "<script>\n" + aj + "\n</script>\n</body>", 1) if "</body>" in html else html + "<script>" + aj + "</script>"
             return self._send(200, html, "text/html; charset=utf-8")
         if path in ("/follow", "/follow/"):
             page = read("follow.html").replace("/*__CONTENT__*/null", json.dumps(content()).replace("</", "<\\/"))
