@@ -40,7 +40,7 @@ One stdlib Python server (`server.py`, 127.0.0.1:8080) behind a Cloudflare quick
 Every page needs an access code. Anyone without it sees a branded login screen.
 - The QR code carries the code (`/follow?code=...`), so phones that scan it skip the screen. People given the bare link type the code once; a cookie keeps them in for 30 days.
 - The presenter link (`/?presenter=<key>`) gets in without the code.
-- Local code: `access-code.txt`. It is derived from the presenter key unless you set `ACCESS_CODE`. On Render, set `ACCESS_CODE` in the Environment tab so it matches what you hand out.
+- Local code: `access-code.txt` (currently BMARCK). If that file is missing it is derived from the presenter key. `ACCESS_CODE` overrides both. On Render, set `ACCESS_CODE` in the Environment tab so it matches what you hand out.
 - 10 wrong tries from one address locks it out for 10 minutes.
 
 ## Sign-ups

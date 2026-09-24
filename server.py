@@ -51,7 +51,10 @@ _ALPHA = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 def _derive_code():
     d = hmac.new(KEY.encode(), b"bismarck-access", hashlib.sha256).digest()
     return "".join(_ALPHA[b % len(_ALPHA)] for b in d[:6])
-CODE = (os.environ.get("ACCESS_CODE") or "").strip().upper() or _derive_code()
+def _file_code():
+    try: return open(os.path.join(HERE, "access-code.txt")).read().strip().upper()
+    except OSError: return ""
+CODE = (os.environ.get("ACCESS_CODE") or "").strip().upper() or _file_code() or _derive_code()
 ACOOKIE = "bis_access"
 ATOKEN = hmac.new(KEY.encode(), ("access:" + CODE).encode(), hashlib.sha256).hexdigest()[:32]
 def code_ok(c): return bool(c) and hmac.compare_digest(re.sub(r"[\s-]", "", str(c)).upper().encode(), CODE.encode())
