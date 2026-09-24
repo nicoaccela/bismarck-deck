@@ -6,8 +6,16 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: python3 server.py
     healthCheckPath: /robots.txt
+    disk:
+      name: data
+      mountPath: /var/data
+      sizeGB: 1
     envVars:
+      - key: DATA_DIR
+        value: /var/data
       - key: PRESENTER_KEY
         generateValue: true
+      - key: ACCESS_CODE
+        sync: false
       - key: QA_URL
         sync: false

@@ -142,6 +142,42 @@ footer img{height:16px;vertical-align:middle;margin:0 6px;opacity:.8}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 @media (min-width:700px){.hero{padding-left:max(18px,calc(50vw - 306px));padding-right:max(18px,calc(50vw - 306px))}
   .prog{padding-left:max(18px,calc(50vw - 306px));padding-right:max(18px,calc(50vw - 306px))}}
+
+/* ---- your notes + take it with you ---- */
+.nb{margin-top:8px;background:none;border:0;padding:6px 0;font-size:14px;font-weight:600;color:var(--blue);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.nb.has{color:var(--teal-ink)}
+.nt{display:block;width:100%;margin-top:6px;min-height:84px;padding:12px 14px;border:1px solid var(--hair);border-radius:12px;
+  font:inherit;font-size:16px;line-height:1.4;color:var(--ink);background:var(--surf-2);resize:vertical}
+.nt:focus{outline:none;border-color:var(--blue);background:#fff}
+.take{margin:30px 0 8px;background:var(--navy);color:#fff;border-radius:var(--r);padding:26px 22px}
+.take h2{margin:0 0 8px;font-size:24px;letter-spacing:-.01em}
+.take p{margin:0 0 20px;color:#B9CBD6;font-size:16px}
+.take .bt{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:56px;border-radius:14px;border:0;
+  font-weight:700;font-size:17px;text-decoration:none;cursor:pointer;margin-top:10px}
+.take .bt.p{background:var(--blue);color:#fff}.take .bt.s{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2)}
+.take .fine{margin-top:14px;font-size:13px;color:#8FA8B8}
+#sheet{display:none}
+.su{position:fixed;inset:0;z-index:50;background:rgba(13,38,58,.55);display:flex;align-items:flex-end;justify-content:center}
+.suc{width:100%;max-width:520px;background:#fff;border-radius:22px 22px 0 0;padding:26px 22px calc(22px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto}
+.suc h2{margin:0 0 6px;font-size:24px}.suc p{margin:0 0 18px;color:var(--ink-2);font-size:16px}
+.suc label{display:block;font-size:15px;font-weight:600;margin:0 0 14px}.suc label span{font-weight:400;color:var(--ink-3)}
+.suc input:not([type=checkbox]){display:block;width:100%;margin-top:6px;padding:14px;font:inherit;font-size:17px;border:1px solid var(--hair);border-radius:12px;background:var(--surf-2)}
+.suc input:focus{outline:none;border-color:var(--blue);background:#fff}
+.suc .cb{display:flex;gap:12px;align-items:flex-start;font-weight:500}.suc .cb input{width:22px;height:22px;margin:1px 0 0;flex:none;accent-color:var(--blue)}
+.suc .bt{display:flex;align-items:center;justify-content:center;width:100%;min-height:54px;border-radius:14px;border:0;font:inherit;font-weight:700;font-size:17px;margin-top:10px;cursor:pointer}
+.suc .bt.p{background:var(--blue);color:#fff}.suc .bt.x{background:var(--surf-3);color:var(--ink)}
+.suc .fine{margin-top:12px;font-size:13px;color:var(--ink-3)}.suerr{color:#B4441A;font-size:15px;min-height:1em}
+@media print{
+  body{background:#fff}
+  body>*:not(#sheet){display:none!important}
+  #sheet{display:block;font-size:12pt;color:#000;padding:0}
+  #sheet h1{font-size:20pt;margin:0 0 4pt} #sheet .sub{color:#444;margin:0 0 14pt}
+  #sheet h2{font-size:13pt;margin:16pt 0 6pt;border-bottom:1px solid #999;padding-bottom:3pt;break-after:avoid}
+  #sheet .q{margin:0 0 7pt;break-inside:avoid} #sheet .q b{display:inline-block;min-width:34pt}
+  #sheet .st{font-size:10pt;color:#0F7A3D;font-weight:700} #sheet .st.no{color:#888}
+  #sheet .o{color:#333;font-size:10.5pt;margin-left:34pt} #sheet .n{margin:3pt 0 0 34pt;padding:4pt 8pt;border-left:3px solid #0068BE;font-size:11pt;white-space:pre-wrap}
+  #sheet .u{font-size:10.5pt;color:#333;margin:4pt 0 0} #sheet a{color:#0068BE}
+}
 </style>
 </head>
 <body>
@@ -164,12 +200,32 @@ footer img{height:16px;vertical-align:middle;margin:0 6px;opacity:.8}
 <main>
   <p class="intro">Tap any customer story to open it. This page updates by itself, so there is no need to refresh.</p>
   <div id="list"></div>
+  <section class="take" id="take">
+    <h2>Take it with you</h2>
+    <p>Keep a copy of every question, what we showed and your own notes.</p>
+    <a class="bt p" id="mail" href="#">Email it to me</a>
+    <button class="bt s" id="pdf" type="button">Save as PDF</button>
+    <div class="fine">Your notes stay on this phone. We never see them.</div>
+  </section>
   <a class="ask" id="ask" href="#" target="_blank" rel="noopener" hidden>Ask us a question<small>Opens the live Q&amp;A. We answer the top questions at the end.</small></a>
 </main>
 <footer>
   <img src="/img/accela-logo.png" alt="Accela"><img src="/img/novotx-logo.png" alt="Novotx"><br>
   Questions and wording from the City's Asset Management Vendor Demonstration Questions.
 </footer>
+<div class="su" id="su" hidden><form class="suc" id="suf" novalidate>
+  <h2>Send me a copy</h2>
+  <p>We will open an email to you with every question, what we showed and your notes.</p>
+  <label>Name<input name="name" autocomplete="name" required maxlength="120"></label>
+  <label>Email<input name="email" type="email" inputmode="email" autocomplete="email" required maxlength="160"></label>
+  <label>Department <span>(optional)</span><input name="org" autocomplete="organization-title" maxlength="160"></label>
+  <label class="cb"><input type="checkbox" name="followup"> It is OK for Accela to follow up with me</label>
+  <div class="suerr" id="suerr"></div>
+  <button class="bt p" type="submit">Send me the copy</button>
+  <button class="bt x" type="button" id="sux">Cancel</button>
+  <div class="fine">Accela keeps your name and email, and only follows up if you tick the box. Your notes are never sent to us.</div>
+</form></div>
+<div id="sheet"></div>
 <div class="toast" id="toast"><i><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></i><span id="toastt"></span></div>
 
 <script>
@@ -183,6 +239,69 @@ const VID=(()=>{ try{ let v=sessionStorage.getItem("bis-fv"); if(!v){ v=Math.ran
 const CHECK='<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 const CHEV='<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>';
 const OPEN=new Set();
+const NK="bis-follow-notes-v1";
+let NOTES=(()=>{ try{ return JSON.parse(localStorage.getItem(NK)||"{}")||{}; }catch(e){ return {}; } })();
+function saveNotes(){ try{ localStorage.setItem(NK,JSON.stringify(NOTES)); }catch(e){} }
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-nb]"); if(!b) return;
+  const t=document.querySelector(`[data-nt="${b.dataset.nb}"]`); if(!t) return;
+  t.hidden=false; t.focus();
+});
+document.addEventListener("input",e=>{
+  const t=e.target.closest("[data-nt]"); if(!t) return;
+  const q=t.dataset.nt, v=t.value.trim();
+  if(v) NOTES[q]=t.value; else delete NOTES[q];
+  saveNotes();
+  const b=document.querySelector(`[data-nb="${q}"]`); if(b){ b.classList.toggle("has",!!v); b.textContent=v?"Your note":"Add a note"; }
+});
+document.addEventListener("input",e=>{ if(e.target.closest("#suf")) $("#suerr").textContent=""; });
+document.addEventListener("submit",async e=>{
+  if(e.target.id!=="suf") return; e.preventDefault();
+  const f=e.target, d={name:f.name.value.trim(),email:f.email.value.trim(),org:f.org.value.trim(),followup:f.followup.checked};
+  if(!d.name) return $("#suerr").textContent="Please add your name.";
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email)) return $("#suerr").textContent="Please check your email address.";
+  $("#suerr").textContent="";
+  try{ localStorage.setItem("bis-follow-me",JSON.stringify({name:d.name,email:d.email,org:d.org})); }catch(err){}
+  try{ await fetch("/api/lead",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(d)}); }catch(err){}
+  $("#su").hidden=true; location.href=mailHref(d.email);
+});
+(()=>{ try{ const me=JSON.parse(localStorage.getItem("bis-follow-me")||"null"); if(me){ const f=$("#suf"); f.name.value=me.name||""; f.email.value=me.email||""; f.org.value=me.org||""; } }catch(e){} })();
+const today=()=>new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
+function summaryText(max){
+  const done=new Set(S.done), L=[];
+  L.push("City of Bismarck: asset and work management demonstration","Accela and Novotx Elements XS, "+today(),"");
+  C.chapters.forEach(c=>{
+    L.push(noDash(c.n+" "+c.title).toUpperCase());
+    c.reqs.forEach(r=>{
+      L.push((done.has(r.id)?"[shown] ":"[ ] ")+r.id+" "+noDash(r.text));
+      if(NOTES[r.id]) L.push("   My note: "+NOTES[r.id].trim().replace(/\n+/g," "));
+    });
+    if(c.use&&c.use.who&&!c.use.honest) L.push("   Customer story: "+noDash(c.use.who)+(c.url?" ("+c.url+")":""));
+    L.push("");
+  });
+  L.push("Follow-along page: "+location.origin+"/follow");
+  let t=L.join("\n");
+  if(max&&t.length>max){ // keep notes, drop story lines first
+    t=L.filter(l=>!/^   Customer story/.test(l)).join("\n");
+    if(t.length>max) t=t.slice(0,max-40)+"\n...\nFull list: "+location.origin+"/follow";
+  }
+  return t;
+}
+function mailHref(to){
+  return "mailto:"+encodeURIComponent(to||"")+"?subject="+encodeURIComponent("City of Bismarck demonstration, my notes")+"&body="+encodeURIComponent(summaryText(1800));
+}
+function buildSheet(){
+  const done=new Set(S.done);
+  $("#sheet").innerHTML=`<h1>City of Bismarck demonstration</h1><p class="sub">Asset and work management, Accela and Novotx Elements XS. ${esc(today())}. ${S.done.length} of 20 questions shown.</p>`+
+    C.chapters.map(c=>`<h2>${T(c.n)} ${T(c.title)}</h2>`+c.reqs.map(r=>`<div class="q"><b>${esc(r.id)}</b>${T(r.text)} <span class="st${done.has(r.id)?"":" no"}">${done.has(r.id)?"Shown":"Not shown"}</span>
+      ${r.outcome?`<div class="o">${T(r.outcome)}</div>`:""}${NOTES[r.id]?`<div class="n">${esc(NOTES[r.id])}</div>`:""}</div>`).join("")+
+      (c.use&&c.use.who&&!c.use.honest?`<p class="u">Customer story: ${T(c.use.who)}${c.url?`, <a href="${esc(c.url)}">${esc(c.url)}</a>`:""}</p>`:"")).join("");
+}
+document.addEventListener("click",e=>{
+  if(e.target.closest("#pdf")){ if(!C) return; buildSheet(); setTimeout(()=>window.print(),50); }
+  const m=e.target.closest("#mail"); if(m&&C){ e.preventDefault(); $("#su").hidden=false; setTimeout(()=>$("#suf [name=name]").focus(),50); }
+  if(e.target.closest("#sux")||e.target.id==="su"){ $("#su").hidden=true; }
+});
 let S={done:[],ch:null,links:{},rev:-1,ver:null,qa:""}, first=true, lastNow=null, userScrolledAt=0;
 
 // the Accela logo on file is the dark version: invert it on the navy header
@@ -217,7 +336,9 @@ function render(){
         <div class="ck" aria-hidden="true">${CHECK}</div>
         <div><div class="qid">${esc(r.id)}<span class="sr" data-sr style="position:absolute;left:-9999px"></span></div><div class="qt">${T(r.text)}</div>
           ${r.hi?`<span class="star">&#9733; You highlighted this</span>`:""}
-          ${r.outcome?`<div class="qo">${T(r.outcome)}</div>`:""}<div data-dl></div></div></li>`).join("")}</ul>
+          ${r.outcome?`<div class="qo">${T(r.outcome)}</div>`:""}<div data-dl></div>
+          <button class="nb${NOTES[r.id]?" has":""}" type="button" data-nb="${esc(r.id)}">${NOTES[r.id]?"Your note":"Add a note"}</button>
+          <textarea class="nt" data-nt="${esc(r.id)}" placeholder="Your note on ${esc(r.id)}" ${NOTES[r.id]?"":"hidden"}>${esc(NOTES[r.id]||"")}</textarea></div></li>`).join("")}</ul>
       ${uc}</section>`; }).join("");
   apply(true);
 }

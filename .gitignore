@@ -8,3 +8,6 @@ follow-qr.png
 content.last-good.json
 __pycache__/
 .DS_Store
+deck.zip
+access-code.txt
+leads.jsonl

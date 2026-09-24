@@ -24,7 +24,10 @@ DECK = os.path.join(_DECK_DIR, "Bismarck-Presentation.html")
 IMG = os.path.join(_DECK_DIR, "img")
 FONTS = os.path.join(HERE, "fonts")
 KEY_FILE = os.path.join(HERE, "presenter.key")
-STATE_FILE = os.path.join(HERE, "state.json")
+DATA_DIR = os.environ.get("DATA_DIR") or HERE          # Render: a persistent disk, see render.yaml
+os.makedirs(DATA_DIR, exist_ok=True)
+STATE_FILE = os.path.join(DATA_DIR, "state.json")
+LEADS_FILE = os.path.join(DATA_DIR, "leads.jsonl")
 CONTENT_FILE = os.path.join(HERE, "content.last-good.json")
 URL_FILE = os.path.join(HERE, "url.txt")
 QA_URL_FILE = os.path.join(HERE, "qa-url.txt")      # optional override for the Q&A portal link
@@ -39,6 +42,49 @@ elif not os.path.exists(KEY_FILE):
     os.chmod(KEY_FILE, 0o600)
 if not os.environ.get("PRESENTER_KEY"): KEY = open(KEY_FILE).read().strip()
 def key_ok(k): return bool(k) and hmac.compare_digest(str(k).encode(), KEY.encode())
+
+# ---------------------------------------------------------------- access code (login screen)
+# Everyone needs the code to see anything. The QR carries it (?code=...), so phones skip the
+# screen; people given the bare link type it once. Set ACCESS_CODE to choose your own; otherwise
+# it is derived from the presenter key, so it stays the same across restarts and deploys.
+_ALPHA = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+def _derive_code():
+    d = hmac.new(KEY.encode(), b"bismarck-access", hashlib.sha256).digest()
+    return "".join(_ALPHA[b % len(_ALPHA)] for b in d[:6])
+CODE = (os.environ.get("ACCESS_CODE") or "").strip().upper() or _derive_code()
+ACOOKIE = "bis_access"
+ATOKEN = hmac.new(KEY.encode(), ("access:" + CODE).encode(), hashlib.sha256).hexdigest()[:32]
+def code_ok(c): return bool(c) and hmac.compare_digest(re.sub(r"[\s-]", "", str(c)).upper().encode(), CODE.encode())
+OPEN_IMG = {"accela-logo.png", "novotx-logo.png", "bismarck-logo.png", "bismarck-logo-white.png", "novotx-logo-white.png"}
+_FAILS = {}
+def too_many(ip):
+    now = time.time(); f = [t for t in _FAILS.get(ip, []) if now - t < 600]; _FAILS[ip] = f
+    return len(f) >= 10
+LOGIN_HTML = """<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
+<title>City of Bismarck presentation</title>
+<style>
+@font-face{font-family:PJS;src:url(/fonts/pjs-400.woff2) format("woff2");font-weight:400}
+@font-face{font-family:PJS;src:url(/fonts/pjs-600.woff2) format("woff2");font-weight:600}
+*{box-sizing:border-box}html,body{overflow-x:hidden}body{margin:0;min-height:100vh;display:grid;grid-template-columns:minmax(0,420px);justify-content:center;align-content:center;font-family:PJS,system-ui,sans-serif;
+background:radial-gradient(900px 560px at 84% -14%,rgba(0,175,241,.22),transparent 62%),#0D263A;color:#fff;padding:24px}
+.card{width:100%;max-width:420px}
+.logos{display:flex;align-items:center;gap:14px;margin-bottom:44px;flex-wrap:wrap}.logos img{height:20px;width:auto;max-width:34%;object-fit:contain;display:block}
+.logos img.city{height:28px}.logos i{width:1px;height:20px;background:rgba(255,255,255,.25)}
+h1{font-size:34px;font-weight:600;letter-spacing:-.02em;margin:0 0 10px}
+p{font-size:17px;color:#B9CBD6;margin:0 0 30px;line-height:1.45}
+input{width:100%;font:600 26px PJS,system-ui;letter-spacing:.28em;text-transform:uppercase;text-align:center;padding:18px;
+border-radius:14px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:#fff;outline:none}
+input:focus{border-color:#00AFF1;background:rgba(255,255,255,.1)}
+button{margin-top:14px;width:100%;font:600 18px PJS,system-ui;padding:18px;border:0;border-radius:14px;background:#0068BE;color:#fff;cursor:pointer}
+button:hover{background:#0B77CF}.err{color:#FFB38A;font-size:16px;margin:14px 0 0;min-height:1em}
+</style></head><body><form class="card" method="post" action="/login">
+<div class="logos"><img src="/img/accela-logo.png" alt="Accela" style="filter:brightness(0) invert(1)"><i></i>
+<img src="/img/novotx-logo-white.png" alt="Novotx"><i></i><img class="city" src="/img/bismarck-logo-white.png" alt="City of Bismarck"></div>
+<h1>Welcome</h1><p>Enter the access code you were given to view the presentation.</p>
+<input name="code" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" maxlength="12" autofocus aria-label="Access code">
+<input type="hidden" name="next" value="__NEXT__">
+<button type="submit">Continue</button><div class="err">__ERR__</div></form></body></html>"""
 
 # ---------------------------------------------------------------- JS literal -> JSON
 class ParseError(Exception): pass
@@ -222,13 +268,13 @@ def public_url(host=None):
 _QR = {}
 def qr(kind, host=None):
     import segno
-    u = public_url(host) + "/follow"
+    u = public_url(host) + "/follow?code=" + CODE
     if (kind, u) not in _QR:
         q = segno.make(u, error="m"); b = io.BytesIO()
         if kind == "svg": q.save(b, kind="svg", scale=8, border=2, dark="#0D263A", xmldecl=False)
         else: q.save(b, kind="png", scale=16, border=3, dark="#0D263A")
         _QR[(kind, u)] = b.getvalue()
-        if kind == "png" and u == public_url() + "/follow":                     # keep the printable PNG in step with url.txt
+        if kind == "png" and u == public_url() + "/follow?code=" + CODE:                     # keep the printable PNG in step with url.txt
             try:
                 with open(os.path.join(HERE, "follow-qr.png"), "wb") as f: f.write(_QR[(kind, u)])
             except OSError: pass
@@ -262,16 +308,40 @@ class H(http.server.BaseHTTPRequestHandler):
         return m.group(1) if m else ""
     def _is_presenter(self):
         return key_ok(self.headers.get("X-Presenter-Key", "")) or key_ok(self._cookie_key())
+    def _has_access(self):
+        m = re.search(ACOOKIE + r"=([0-9a-f]+)", self.headers.get("Cookie", ""))
+        return (m and hmac.compare_digest(m.group(1), ATOKEN)) or self._is_presenter()
+    def _acookie(self):
+        sec = "; Secure" if (self.headers.get("X-Forwarded-Proto") == "https" or "trycloudflare" in (self.headers.get("Host") or "") or "onrender.com" in (self.headers.get("Host") or "")) else ""
+        return f"{ACOOKIE}={ATOKEN}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000{sec}"
+    def _login(self, nxt="/", err="", code=200):
+        nxt = nxt if (nxt.startswith("/") and not nxt.startswith("//")) else "/"
+        page = LOGIN_HTML.replace("__NEXT__", nxt.replace('"', "")).replace("__ERR__", err)
+        return self._send(code, page, "text/html; charset=utf-8", {"Referrer-Policy": "no-referrer"})
 
     def do_HEAD(self): self.do_GET()
     def do_GET(self):
         path = urllib.parse.urlsplit(self.path).path
         qs = self._qs()
+        # ---- login gate
+        if path == "/login": return self._login((qs.get("next") or ["/"])[0])
+        if path == "/robots.txt": return self._send(200, "User-agent: *\nDisallow: /\n")
+        open_asset = path.startswith("/fonts/") or (path.startswith("/img/") and os.path.basename(path) in OPEN_IMG)
+        presenter_link = path in ("/", "/index.html") and key_ok((qs.get("presenter") or [""])[0])
+        if not open_asset and not presenter_link:
+            c = (qs.get("code") or [""])[0]
+            if c and code_ok(c):
+                rest = urllib.parse.urlencode({k: v[0] for k, v in qs.items() if k != "code"})
+                return self._send(302, "", "text/plain", {"Location": path + ("?" + rest if rest else ""), "Set-Cookie": self._acookie()})
+            if not self._has_access():
+                if path.startswith("/api/"): return self._send(401, {"error": "access code required"})
+                full = path + ("?" + urllib.parse.urlsplit(self.path).query if urllib.parse.urlsplit(self.path).query else "")
+                return self._send(302, "", "text/plain", {"Location": "/login?next=" + urllib.parse.quote(full, safe="")})
         if path in ("/", "/index.html"):
             html = open(DECK, encoding="utf-8").read()
             pk = (qs.get("presenter") or [""])[0]
             if key_ok(pk) or (not pk and key_ok(self._cookie_key())):
-                js = read("presenter.js").replace("__FOLLOW_URL__", json.dumps(public_url(self.headers.get("Host")) + "/follow"))
+                js = read("presenter.js").replace("__FOLLOW_URL__", json.dumps(public_url(self.headers.get("Host")) + "/follow?code=" + CODE))
                 html = html.replace("</body>", "<script>\n" + js + "\n</script>\n</body>", 1) if "</body>" in html else html + "<script>" + js + "</script>"
                 return self._send(200, html, "text/html; charset=utf-8", {
                     "Set-Cookie": f"{COOKIE}={KEY}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=86400",
@@ -281,6 +351,17 @@ class H(http.server.BaseHTTPRequestHandler):
         if path in ("/follow", "/follow/"):
             page = read("follow.html").replace("/*__CONTENT__*/null", json.dumps(content()).replace("</", "<\\/"))
             return self._send(200, page, "text/html; charset=utf-8", {"Referrer-Policy": "no-referrer"})
+        if path in ("/api/leads.csv", "/leads.csv"):
+            if not self._is_presenter(): return self._send(403, "presenter key required")
+            import csv
+            out = io.StringIO(); w = csv.writer(out); w.writerow(["when", "name", "email", "department", "ok to follow up", "questions shown at the time"])
+            try:
+                for line in open(LEADS_FILE, encoding="utf-8"):
+                    try: r = json.loads(line)
+                    except ValueError: continue
+                    w.writerow([r.get("at"), r.get("name"), r.get("email"), r.get("org"), "yes" if r.get("followup") else "no", r.get("shown")])
+            except OSError: pass
+            return self._send(200, out.getvalue(), "text/csv; charset=utf-8", {"Content-Disposition": 'attachment; filename="bismarck-signups.csv"'})
         if path == "/api/content": return self._send(200, content())
         if path == "/api/state":
             v = (qs.get("v") or [""])[0][:24]
@@ -327,6 +408,33 @@ class H(http.server.BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urllib.parse.urlsplit(self.path).path
+        if path == "/login":
+            ip = self.headers.get("X-Forwarded-For", self.client_address[0]).split(",")[0].strip()
+            n = int(self.headers.get("Content-Length") or 0)
+            f = urllib.parse.parse_qs(self.rfile.read(min(n, 4096)).decode("utf-8", "ignore")) if n else {}
+            nxt = (f.get("next") or ["/"])[0]
+            if too_many(ip): return self._login(nxt, "Too many tries. Wait a few minutes.", 429)
+            if code_ok((f.get("code") or [""])[0]):
+                nxt = nxt if (nxt.startswith("/") and not nxt.startswith("//")) else "/"
+                return self._send(303, "", "text/plain", {"Location": nxt, "Set-Cookie": self._acookie()})
+            _FAILS.setdefault(ip, []).append(time.time())
+            return self._login(nxt, "That code did not work. Try again.", 401)
+        if path == "/api/lead":
+            if not self._has_access(): return self._send(401, {"error": "access code required"})
+            ip = self.headers.get("X-Forwarded-For", self.client_address[0]).split(",")[0].strip()
+            if too_many("lead:" + ip): return self._send(429, {"error": "slow down"})
+            _FAILS.setdefault("lead:" + ip, []).append(time.time())      # 10 sign-ups per address per 10 min
+            try:
+                n = int(self.headers.get("Content-Length") or 0)
+                b = json.loads(self.rfile.read(min(n, 8192)) or b"{}")
+            except Exception: return self._send(400, {"error": "bad json"})
+            clean = lambda k, m: re.sub(r"[\x00-\x1f<>]", "", str(b.get(k) or "")).strip()[:m]
+            rec = {"at": time.strftime("%Y-%m-%d %H:%M:%S"), "name": clean("name", 120), "email": clean("email", 160).lower(),
+                   "org": clean("org", 160), "followup": bool(b.get("followup")), "shown": len(STATE["done"])}
+            if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", rec["email"]): return self._send(400, {"error": "email"})
+            with LOCK:
+                with open(LEADS_FILE, "a", encoding="utf-8") as f: f.write(json.dumps(rec) + "\n")
+            return self._send(200, {"ok": True})
         if path not in ("/api/state", "/api/reset"): return self._send(404, "Not found")
         if not self._is_presenter(): return self._send(403, {"error": "presenter key required"})
         try:
